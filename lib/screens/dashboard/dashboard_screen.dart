@@ -9,6 +9,9 @@ import '../doctors/doctors_screen.dart';
 import '../../widgets/chat_fab.dart';
 import '../wounds/add_wound_screen.dart';
 import '../notifications_screen.dart';
+import '../about_us_screen.dart';
+import '../landing_screen.dart';
+import '../wounds/wound_progress_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -33,7 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AddWoundScreen()),
-    );
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -44,11 +49,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       floatingActionButton: const ChatFab(),
+      drawer: _AppDrawer(
+        authService: _authService,
+        onLogout: () async {
+          await _authService.logout();
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LandingScreen()),
+              (route) => false,
+            );
+          }
+        },
+      ),
       backgroundColor: const Color(0xFFF8FCFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const Icon(Icons.menu, color: Color(0xFF338880)),
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu, color: Color(0xFF338880)),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: const Text(
           'WoundCare',
           style: TextStyle(
@@ -75,9 +98,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: CircleAvatar(
                 radius: 18,
                 backgroundColor: const Color(0xFF338880),
-                child: user?.fullName != null
+                child: user?.fullName != null && user!.fullName.isNotEmpty
                     ? Text(
-                        user!.fullName.substring(0, 1).toUpperCase(),
+                        user.fullName.substring(0, 1).toUpperCase(),
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       )
                     : const Icon(Icons.person, color: Colors.white, size: 18),
@@ -92,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome back, ${user?.fullName.split(' ')[0] ?? 'User'}!',
+              'Welcome back, ${(user?.fullName.isNotEmpty == true) ? user!.fullName.split(' ')[0] : 'User'}!',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -220,9 +243,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildActiveCaseCard(WoundModel wound) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => WoundProgressScreen(wound: wound)));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -287,13 +314,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+      ),
     );
   }
 
   Widget _buildWoundListItem(WoundModel wound) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => WoundProgressScreen(wound: wound)));
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
@@ -320,6 +352,174 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Icon(Icons.chevron_right, color: Color(0xFF9EA7AD)),
         ],
       ),
+      ),
+    );
+  }
+}
+
+// ─── App Drawer ───────────────────────────────────────────────────────────────
+
+class _AppDrawer extends StatelessWidget {
+  final AuthService authService;
+  final Future<void> Function() onLogout;
+
+  const _AppDrawer({required this.authService, required this.onLogout});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = authService.currentUser;
+    final name = (user?.fullName.isNotEmpty == true) ? user!.fullName : 'User';
+    final email = user?.email ?? '';
+
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+              decoration: const BoxDecoration(
+                color: Color(0xFF338880),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white.withAlpha(40),
+                    child: Text(
+                      name.substring(0, name.length.clamp(0, 2)).toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),
+                  ),
+                  const Gap(12),
+                  Text(name,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16)),
+                  if (email.isNotEmpty)
+                    Text(email,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12)),
+                  if (authService.isPremium)
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withAlpha(220),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text('⭐ PREMIUM',
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
+                    ),
+                ],
+              ),
+            ),
+
+            // ── Menu items ───────────────────────────────────────────────
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _DrawerItem(
+                    icon: Icons.home_outlined,
+                    label: 'Home',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  _DrawerItem(
+                    icon: Icons.notifications_outlined,
+                    label: 'Notifications',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen()));
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.workspace_premium_outlined,
+                    label: 'Go Premium',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PremiumScreen()));
+                    },
+                  ),
+                  const Divider(height: 24, indent: 20, endIndent: 20),
+                  _DrawerItem(
+                    icon: Icons.info_outline_rounded,
+                    label: 'About Us',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AboutUsScreen()));
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Logout ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                tileColor: const Color(0xFFFFEAEA),
+                leading: const Icon(Icons.logout_rounded,
+                    color: Color(0xFFB3261E)),
+                title: const Text('Logout',
+                    style: TextStyle(
+                        color: Color(0xFFB3261E),
+                        fontWeight: FontWeight.bold)),
+                onTap: () async {
+                  Navigator.pop(context); // close drawer
+                  await onLogout();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _DrawerItem(
+      {required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      leading: Icon(icon, color: const Color(0xFF338880)),
+      title: Text(label,
+          style: const TextStyle(
+              color: Color(0xFF0A1F2D),
+              fontWeight: FontWeight.w600,
+              fontSize: 14)),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }

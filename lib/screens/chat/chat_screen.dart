@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../services/wound_service.dart';
+import '../../models/wound_model.dart';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 
@@ -28,40 +30,49 @@ class _ChatMessage {
 // ─── Mock data ────────────────────────────────────────────────────────────────
 // TODO: Replace with API endpoint when ready.
 
-final List<_ChatMessage> _mockHistory = [
-  _ChatMessage(
-    sender: _SenderType.bot,
-    text:
-        'Hello Karthik! I can help with wound care questions, medication guidance, and general health queries.',
-  ),
-  _ChatMessage(sender: _SenderType.user, text: 'Is my wound healing normally?'),
-  _ChatMessage(
-    sender: _SenderType.bot,
-    text:
-        'Based on your Left Knee data, your score improved from 32 to 74 in 7 days. That\'s a solid recovery rate! The mild redness today is worth monitoring.',
-  ),
-  _ChatMessage(sender: _SenderType.user, text: 'Should I see a doctor?'),
-  _ChatMessage(
-    sender: _SenderType.bot,
-    text: 'This looks like a wound-related issue.',
-    type: _MessageType.woundCard,
-    cardTitle: '⚠️  This looks like a wound-related issue.',
-    cardBody: 'I\'ve found signs worth reviewing in your latest analysis.',
-    cardButton: 'View Wound Analysis  →',
-  ),
-];
+final Map<String, List<_ChatMessage>> _mockHistories = {
+  'general': [
+    _ChatMessage(
+      sender: _SenderType.bot,
+      text: 'Hello Karthik! I can help with general health questions or you can select a specific wound above to get tailored advice.',
+    ),
+  ],
+  '1': [ // ID 1 corresponds to Left Knee Abrasion in mock WoundService
+    _ChatMessage(
+      sender: _SenderType.bot,
+      text: 'Let\'s talk about your Left Knee Abrasion. How is the pain today?',
+    ),
+    _ChatMessage(sender: _SenderType.user, text: 'Is my wound healing normally?'),
+    _ChatMessage(
+      sender: _SenderType.bot,
+      text: 'Based on your data, your score improved to 74. The mild redness today is worth monitoring.',
+    ),
+    _ChatMessage(sender: _SenderType.user, text: 'Should I see a doctor?'),
+    _ChatMessage(
+      sender: _SenderType.bot,
+      text: 'This looks like a wound-related issue.',
+      type: _MessageType.woundCard,
+      cardTitle: '⚠️  This looks like a wound-related issue.',
+      cardBody: 'I\'ve found signs worth reviewing in your latest analysis.',
+      cardButton: 'View Wound Analysis  →',
+    ),
+  ]
+};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String? initialWoundId;
+  const ChatScreen({super.key, this.initialWoundId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late final List<_ChatMessage> _messages;
+  late final Map<String, List<_ChatMessage>> _histories;
+  late String _activeContextId;
+  
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
@@ -69,8 +80,20 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _messages = List.from(_mockHistory);
+    // Copy mock histories so we can modify them
+    _histories = {
+      for (var entry in _mockHistories.entries)
+        entry.key: List.from(entry.value)
+    };
+    _activeContextId = widget.initialWoundId ?? 'general';
+    if (!_histories.containsKey(_activeContextId)) {
+       _histories[_activeContextId] = [
+         _ChatMessage(sender: _SenderType.bot, text: 'Hello! I am ready to help you with this wound case.')
+       ];
+    }
   }
+
+  List<_ChatMessage> get _activeMessages => _histories[_activeContextId]!;
 
   @override
   void dispose() {
@@ -96,7 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
 
     setState(() {
-      _messages.add(_ChatMessage(sender: _SenderType.user, text: text.trim()));
+      _activeMessages.add(_ChatMessage(sender: _SenderType.user, text: text.trim()));
       _isTyping = true;
     });
     _scrollToBottom();
@@ -108,10 +131,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _isTyping = false;
-      _messages.add(_ChatMessage(
+      _activeMessages.add(_ChatMessage(
         sender: _SenderType.bot,
-        text:
-            'I\'m analysing your wound data now. For personalised advice, please consult your assigned doctor through the Doctors tab.',
+        text: _activeContextId == 'general' 
+            ? 'For general queries, please contact our support team.'
+            : 'I\'m analysing your data now. For personalised advice, please consult your assigned doctor.',
       ));
     });
     _scrollToBottom();
@@ -155,17 +179,34 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          // ── Context Selector ─────────────────────────────────
+          Container(
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: const Color(0xFFE0E7E8))),
+            ),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              children: [
+                _buildContextChip('general', 'General Medical'),
+                ...WoundService().wounds.map((w) => _buildContextChip(w.id, w.title)),
+              ],
+            ),
+          ),
+          
           // ── Chat list ──────────────────────────────────────
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemCount: _activeMessages.length + (_isTyping ? 1 : 0),
               itemBuilder: (context, i) {
-                if (_isTyping && i == _messages.length) {
+                if (_isTyping && i == _activeMessages.length) {
                   return _TypingBubble();
                 }
-                return _MessageBubble(message: _messages[i]);
+                return _MessageBubble(message: _activeMessages[i]);
               },
             ),
           ),
@@ -220,6 +261,42 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContextChip(String id, String label) {
+    final isActive = _activeContextId == id;
+    return GestureDetector(
+      onTap: () {
+        if (!isActive) {
+           setState(() {
+             _activeContextId = id;
+             if (!_histories.containsKey(id)) {
+                _histories[id] = [
+                  _ChatMessage(sender: _SenderType.bot, text: 'Hello! You have switched context to $label. How can I assist you with this today?')
+                ];
+             }
+           });
+           Future.delayed(const Duration(milliseconds: 50), _scrollToBottom);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF338880) : const Color(0xFFF0F4F4),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isActive ? const Color(0xFF338880) : Colors.transparent),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : const Color(0xFF5A6B74),
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }

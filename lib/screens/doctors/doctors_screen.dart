@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../widgets/chat_fab.dart';
+import 'doctor_detail_screen.dart';
 
 class DoctorsScreen extends StatefulWidget {
   const DoctorsScreen({super.key});
@@ -16,30 +17,51 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
   final List<_Doctor> _doctors = const [
     _Doctor(
       name: 'Dr. Ramesh Kumar',
-      specialty: 'Lead Wound Specialist',
-      rating: 4.9,
+      specialty: 'General Surgeon',
+      degree: 'MS, DNB',
+      hospital: 'City Care Hospital, Salem',
+      rating: 4.8,
+      reviews: 124,
       nextSlot: 'Next: 10:30 AM',
       isOnline: true,
       imageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
       filterIndex: 0,
+      experience: 12,
+      cases: 134,
+      positive: 98,
+      fee: 500,
     ),
     _Doctor(
       name: 'Dr. Sarah Chen',
       specialty: 'Dermatologist',
+      degree: 'MD, FRCP',
+      hospital: 'Apollo Specialty, Chennai',
       rating: 4.7,
+      reviews: 89,
       nextSlot: 'Next: 02:15 PM',
       isOnline: true,
       imageUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
       filterIndex: 1,
+      experience: 9,
+      cases: 210,
+      positive: 97,
+      fee: 600,
     ),
     _Doctor(
       name: 'Dr. Marcus Thorne',
       specialty: 'Vascular Specialist',
+      degree: 'MCh, FACS',
+      hospital: 'Global Health Centre, Bengaluru',
       rating: 5.0,
+      reviews: 202,
       nextSlot: 'Next: Tomorrow',
       isOnline: true,
       imageUrl: 'https://randomuser.me/api/portraits/men/65.jpg',
       filterIndex: 2,
+      experience: 15,
+      cases: 320,
+      positive: 99,
+      fee: 750,
     ),
   ];
 
@@ -225,20 +247,48 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
 class _Doctor {
   final String name;
   final String specialty;
+  final String degree;
+  final String hospital;
   final double rating;
+  final int reviews;
   final String nextSlot;
   final bool isOnline;
   final String imageUrl;
   final int filterIndex;
+  final int experience;
+  final int cases;
+  final int positive;
+  final int fee;
   const _Doctor({
     required this.name,
     required this.specialty,
+    required this.degree,
+    required this.hospital,
     required this.rating,
+    required this.reviews,
     required this.nextSlot,
     required this.isOnline,
     required this.imageUrl,
     required this.filterIndex,
+    required this.experience,
+    required this.cases,
+    required this.positive,
+    required this.fee,
   });
+
+  DoctorDetailArgs toArgs() => DoctorDetailArgs(
+        name: name,
+        specialty: specialty,
+        degree: degree,
+        hospital: hospital,
+        rating: rating,
+        reviews: reviews,
+        imageUrl: imageUrl,
+        experience: experience,
+        cases: cases,
+        positive: positive,
+        fee: fee,
+      );
 }
 
 // ─── Doctor Card Widget ───────────────────────────────────────────────────────
@@ -354,7 +404,13 @@ class _DoctorCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DoctorDetailScreen(
+                                doctor: doctor.toArgs()),
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF338880),
                           side: const BorderSide(color: Color(0xFF338880)),
@@ -368,7 +424,13 @@ class _DoctorCard extends StatelessWidget {
                     const Gap(8),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DoctorDetailScreen(
+                                doctor: doctor.toArgs()),
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF338880),
                           foregroundColor: Colors.white,

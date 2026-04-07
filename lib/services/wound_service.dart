@@ -46,4 +46,22 @@ class WoundService {
   WoundModel? get activeWound {
     return _wounds.firstWhere((w) => w.status == WoundStatus.healing, orElse: () => _wounds.first);
   }
+
+  void updateWound(String id, String title, String description) {
+    final index = _wounds.indexWhere((w) => w.id == id);
+    if (index != -1) {
+      final old = _wounds[index];
+      // Simulate an improvement in healing percentage
+      final newHealing = (old.healingPercentage + 8).clamp(0, 100);
+      _wounds[index] = WoundModel(
+        id: old.id,
+        title: title, // although normally we wouldn't rename a wound
+        description: description,
+        updatedAt: DateTime.now(),
+        healingPercentage: newHealing,
+        status: newHealing == 100 ? WoundStatus.closed : old.status,
+        imageUrl: old.imageUrl,
+      );
+    }
+  }
 }

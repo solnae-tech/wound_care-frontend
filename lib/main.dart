@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'screens/landing_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AuthService().init();
-  runApp(const MyApp());
+  runApp(MyApp(startLoggedIn: AuthService().isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool startLoggedIn;
+  const MyApp({super.key, required this.startLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF338880)),
         useMaterial3: true,
       ),
-      home: const LandingScreen(),
+      home: startLoggedIn ? const DashboardScreen() : const LandingScreen(),
     );
   }
 }

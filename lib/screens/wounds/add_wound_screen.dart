@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:image_picker/image_picker.dart';
 import 'wound_analysis_loading_screen.dart';
+import 'wound_analysis_result_screen.dart';
+import '../../models/wound_model.dart';
 
 class AddWoundScreen extends StatefulWidget {
-  const AddWoundScreen({super.key});
+  final WoundModel? existingWound;
+  const AddWoundScreen({super.key, this.existingWound});
 
   @override
   State<AddWoundScreen> createState() => _AddWoundScreenState();
@@ -76,8 +79,10 @@ class _AddWoundScreenState extends State<AddWoundScreen> {
     return 'Worst Pain';
   }
 
-  bool get _isValid =>
-      _causeController.text.trim().isNotEmpty && _selectedLocation != null;
+  bool get _isValid {
+    if (widget.existingWound != null) return true;
+    return _causeController.text.trim().isNotEmpty && _selectedLocation != null;
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source, imageQuality: 80);
@@ -145,8 +150,8 @@ class _AddWoundScreenState extends State<AddWoundScreen> {
               color: Color(0xFF338880), size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Add New Wound',
-            style: TextStyle(
+        title: Text(widget.existingWound != null ? 'Log Progress' : 'Add New Wound',
+            style: const TextStyle(
                 color: Color(0xFF0A1F2D), fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
@@ -169,89 +174,93 @@ class _AddWoundScreenState extends State<AddWoundScreen> {
                   const Gap(20),
 
                   // ── 1. Cause ─────────────────────────────────────────────
-                  _FieldCard(
-                    icon: Icons.crisis_alert_outlined,
-                    title: 'Cause of Wound',
-                    required: true,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _causeOptions.map((cause) {
-                            final selected = _causeController.text == cause;
-                            return GestureDetector(
-                              onTap: () => setState(
-                                  () => _causeController.text = cause),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? const Color(0xFF338880)
-                                      : const Color(0xFFF0F4F4),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
+                  if (widget.existingWound == null) ...[
+                    _FieldCard(
+                      icon: Icons.crisis_alert_outlined,
+                      title: 'Cause of Wound',
+                      required: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _causeOptions.map((cause) {
+                              final selected = _causeController.text == cause;
+                              return GestureDetector(
+                                onTap: () => setState(
+                                    () => _causeController.text = cause),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
                                     color: selected
                                         ? const Color(0xFF338880)
-                                        : const Color(0xFFE0E7E8),
-                                  ),
-                                ),
-                                child: Text(cause,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
+                                        : const Color(0xFFF0F4F4),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
                                       color: selected
-                                          ? Colors.white
-                                          : const Color(0xFF5A6B74),
-                                    )),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const Gap(12),
-                        TextField(
-                          controller: _causeController,
-                          onChanged: (_) => setState(() {}),
-                          decoration: _inputDecoration('Describe the cause...'),
-                          style: const TextStyle(
-                              color: Color(0xFF0A1F2D), fontSize: 14),
-                        ),
-                      ],
+                                          ? const Color(0xFF338880)
+                                          : const Color(0xFFE0E7E8),
+                                    ),
+                                  ),
+                                  child: Text(cause,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: selected
+                                            ? Colors.white
+                                            : const Color(0xFF5A6B74),
+                                      )),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const Gap(12),
+                          TextField(
+                            controller: _causeController,
+                            onChanged: (_) => setState(() {}),
+                            decoration: _inputDecoration('Describe the cause...'),
+                            style: const TextStyle(
+                                color: Color(0xFF0A1F2D), fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Gap(16),
+                    const Gap(16),
+                  ],
 
                   // ── 2. Location ───────────────────────────────────────────
-                  _FieldCard(
-                    icon: Icons.location_on_outlined,
-                    title: 'Location on Body',
-                    required: true,
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedLocation,
-                      isExpanded: true,
-                      decoration: _inputDecoration('Select body area'),
-                      dropdownColor: Colors.white,
-                      items: _bodyLocations
-                          .map((loc) => DropdownMenuItem(
-                                value: loc,
-                                child: Text(loc,
-                                    style: const TextStyle(
-                                        color: Color(0xFF0A1F2D),
-                                        fontSize: 14)),
-                              ))
-                          .toList(),
-                      onChanged: (v) =>
-                          setState(() => _selectedLocation = v),
-                      style: const TextStyle(
-                          color: Color(0xFF0A1F2D), fontSize: 14),
-                      icon: const Icon(Icons.expand_more_rounded,
-                          color: Color(0xFF338880)),
+                  if (widget.existingWound == null) ...[
+                    _FieldCard(
+                      icon: Icons.location_on_outlined,
+                      title: 'Location on Body',
+                      required: true,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedLocation,
+                        isExpanded: true,
+                        decoration: _inputDecoration('Select body area'),
+                        dropdownColor: Colors.white,
+                        items: _bodyLocations
+                            .map((loc) => DropdownMenuItem(
+                                  value: loc,
+                                  child: Text(loc,
+                                      style: const TextStyle(
+                                          color: Color(0xFF0A1F2D),
+                                          fontSize: 14)),
+                                ))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => _selectedLocation = v),
+                        style: const TextStyle(
+                            color: Color(0xFF0A1F2D), fontSize: 14),
+                        icon: const Icon(Icons.expand_more_rounded,
+                            color: Color(0xFF338880)),
+                      ),
                     ),
-                  ),
-                  const Gap(16),
+                    const Gap(16),
+                  ],
 
                   // ── 3. Pain Level ─────────────────────────────────────────
                   _FieldCard(
@@ -479,10 +488,18 @@ class _AddWoundScreenState extends State<AddWoundScreen> {
                         builder: (_) => WoundAnalysisLoadingScreen(
                           analysisFuture: mockApiFuture,
                           onComplete: (result) {
-                            // Pop the loading screen, then the add wound screen
-                            Navigator.of(context)
-                              ..pop() // loading screen
-                              ..pop(); // add wound screen
+                            // Replace the loading screen and add wound screen with the result screen
+                            Navigator.pushReplacement(
+                              context,
+                              // Push result screen
+                              MaterialPageRoute(
+                                builder: (_) => WoundAnalysisResultScreen(
+                                  woundTitle: widget.existingWound?.title ?? (_selectedLocation ?? 'New Wound'),
+                                  causeDesc: widget.existingWound?.description ?? _causeController.text,
+                                  existingWoundId: widget.existingWound?.id,
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ),

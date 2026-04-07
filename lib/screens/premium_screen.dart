@@ -137,10 +137,9 @@ class _PremiumScreenState extends State<PremiumScreen> {
                             onTap: () => setState(() => _isAnnual = true),
                             child: _PlanCard(
                               label: 'Annual',
-                              price: '₹199',
-                              sub: '/mo',
-                              badge: 'SAVE 33%',
-                              detail: '₹2,388/yr',
+                              price: '₹2,880',
+                              sub: '/yr',
+                              badge: 'SAVE 20%',
                               recommended: true,
                               isSelected: _isAnnual,
                             ),
