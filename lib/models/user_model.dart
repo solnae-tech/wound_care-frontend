@@ -5,14 +5,19 @@ class UserModel {
   String? password;
   String? location;
   MedicalStats? medicalStats;
+  bool isPremium;
+
+  final DateTime createdAt;
 
   UserModel({
     required this.fullName,
     required this.phoneNumber,
     required this.email,
+    required this.createdAt,
     this.password,
     this.location,
     this.medicalStats,
+    this.isPremium = false,
   });
 }
 

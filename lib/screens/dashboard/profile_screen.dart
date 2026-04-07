@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import 'package:intl/intl.dart';
 import '../../services/auth_service.dart';
+import '../../services/wound_service.dart';
 import '../auth/login_screen.dart';
+import '../../widgets/chat_fab.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -9,8 +12,11 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
+    final woundService = WoundService();
+    final activeWound = woundService.activeWound;
 
     return Scaffold(
+      floatingActionButton: const ChatFab(),
       backgroundColor: const Color(0xFFF8FCFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -26,8 +32,16 @@ class ProfileScreen extends StatelessWidget {
           children: [
             _buildProfileHeader(user),
             const Gap(24),
-            _buildStatsRow(),
+            _buildStatsRow(
+              wounds: woundService.wounds.length.toString(),
+              days: user != null ? (DateTime.now().difference(user.createdAt).inDays + 1).toString() : '1',
+              score: activeWound?.healingPercentage.toString() ?? '0',
+            ),
             const Gap(24),
+            if (user?.medicalStats != null) ...[
+              _buildMedicalProfileSection(user!.medicalStats!),
+              const Gap(16),
+            ],
             _buildMenuSection('ACCOUNT', [
               _MenuItem(Icons.person_outline, 'Personal Details'),
               _MenuItem(Icons.lock_outline, 'Change Password'),
@@ -54,8 +68,8 @@ class ProfileScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: ListTile(
-                onTap: () {
-                  AuthService().logout();
+                onTap: () async {
+                  await AuthService().logout();
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -76,6 +90,11 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(dynamic user) {
+    String memberSince = 'March 2026';
+    if (user != null) {
+      memberSince = DateFormat('MMMM yyyy').format(user.createdAt);
+    }
+
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -91,10 +110,10 @@ class ProfileScreen extends StatelessWidget {
                   color: const Color(0xFF338880),
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'KR',
-                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                    user?.fullName != null ? user.fullName!.substring(0, 2).toUpperCase() : 'KR',
+                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -119,9 +138,9 @@ class ProfileScreen extends StatelessWidget {
             user?.phoneNumber ?? '+91 98765 43210',
             style: const TextStyle(color: Color(0xFF5A6B74)),
           ),
-          const Text(
-            'Member since March 2026',
-            style: TextStyle(color: Color(0xFF9EA7AD), fontSize: 12),
+          Text(
+            'Member since $memberSince',
+            style: const TextStyle(color: Color(0xFF9EA7AD), fontSize: 12),
           ),
           const Gap(16),
           Container(
@@ -148,16 +167,16 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow({required String wounds, required String days, required String score}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildStatItem('WOUNDS', '2', 'Tracked'),
+          _buildStatItem('WOUNDS', wounds, 'Tracked'),
           const Gap(12),
-          _buildStatItem('DAYS', '18', 'Logged'),
+          _buildStatItem('DAYS', days, 'Logged'),
           const Gap(12),
-          _buildStatItem('SCORE', '74', 'Current'),
+          _buildStatItem('SCORE', score, 'Current'),
         ],
       ),
     );
@@ -180,6 +199,53 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMedicalProfileSection(dynamic stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Text('MEDICAL PROFILE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9EA7AD))),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              _buildMedicalStatTile('Blood Type', stats.bloodType, Icons.bloodtype, Colors.red),
+              const Divider(height: 24, thickness: 0.5),
+              _buildMedicalStatTile('Blood Pressure', stats.bloodPressure, Icons.speed, Colors.orange),
+              const Divider(height: 24, thickness: 0.5),
+              _buildMedicalStatTile('Weight', stats.weight, Icons.monitor_weight, Colors.blue),
+              const Divider(height: 24, thickness: 0.5),
+              _buildMedicalStatTile('Height', stats.height, Icons.height, Colors.green),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMedicalStatTile(String label, String value, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const Gap(16),
+        Text(label, style: const TextStyle(color: Color(0xFF5A6B74))),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D))),
+      ],
     );
   }
 

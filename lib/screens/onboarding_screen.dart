@@ -39,23 +39,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: 120,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Row(
-            children: [
-              const Icon(Icons.medical_services_outlined, color: Color(0xFF338880)),
-              const Gap(8),
-              const Text(
-                'WoundCare',
-                style: TextStyle(
-                  color: Color(0xFF338880),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+        centerTitle: false,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.medical_services_outlined, color: Color(0xFF338880)),
+            const Gap(8),
+            const Text(
+              'WoundCare',
+              style: TextStyle(
+                color: Color(0xFF338880),
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -87,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Column(
               children: [
                 Row(
@@ -107,7 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                 ),
-                const Gap(32),
+                const Gap(24),
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -140,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
                 if (_currentPage == _pages.length - 1) ...[
-                  const Gap(16),
+                  const Gap(12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -167,7 +165,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ],
                   ),
-                ],
+                ] else
+                  const Gap(12), // Placeholder to maintain spacing
               ],
             ),
           ),
@@ -184,11 +183,12 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const Gap(40),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -197,11 +197,11 @@ class OnboardingPage extends StatelessWidget {
             ),
             child: Image.asset(
               data.image,
-              height: 240,
+              height: MediaQuery.of(context).size.height * 0.3,
               fit: BoxFit.contain,
             ),
           ),
-          const Gap(48),
+          const Gap(40),
           Text(
             data.title,
             textAlign: TextAlign.center,

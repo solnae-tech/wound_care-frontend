@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
+import '../../models/wound_model.dart';
+import '../../services/wound_service.dart';
+import '../../services/auth_service.dart';
 import 'profile_screen.dart';
+import '../premium_screen.dart';
+import '../doctors/doctors_screen.dart';
+import '../../widgets/chat_fab.dart';
+import '../wounds/add_wound_screen.dart';
+import '../notifications_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -11,6 +19,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+  final WoundService _woundService = WoundService();
+  final AuthService _authService = AuthService();
 
   void _onProfileTap() {
     Navigator.push(
@@ -19,9 +29,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _addNewWound() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddWoundScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activeWound = _woundService.activeWound;
+    final wounds = _woundService.wounds;
+    final user = _authService.currentUser;
+
     return Scaffold(
+      floatingActionButton: const ChatFab(),
       backgroundColor: const Color(0xFFF8FCFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -36,16 +58,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF5A6B74)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const NotificationsScreen()),
+              );
+            },
+            icon: const Icon(Icons.notifications_outlined,
+                color: Color(0xFF5A6B74)),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
               onTap: _onProfileTap,
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=karthik'),
+                backgroundColor: const Color(0xFF338880),
+                child: user?.fullName != null
+                    ? Text(
+                        user!.fullName.substring(0, 1).toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      )
+                    : const Icon(Icons.person, color: Colors.white, size: 18),
               ),
             ),
           ),
@@ -56,9 +91,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Welcome back, ${user?.fullName.split(' ')[0] ?? 'User'}!',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0A1F2D),
+              ),
+            ),
+            const Gap(8),
+            const Text(
+              'Here is your recovery summary for today.',
+              style: TextStyle(color: Color(0xFF5A6B74), fontSize: 14),
+            ),
+            const Gap(24),
             _buildAlertCard(),
             const Gap(24),
-            _buildActiveCaseCard(),
+            if (activeWound != null) _buildActiveCaseCard(activeWound),
             const Gap(32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -74,24 +123,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const Gap(12),
-            _buildWoundListItem(
-              'Left Knee Abrasion',
-              'Updated 2h ago • 74% Healed',
-              'https://picsum.photos/100?random=1',
-            ),
-            const Gap(12),
-            _buildWoundListItem(
-              'Right Forearm Cut',
-              'Closed 12 days ago • 100% Healed',
-              'https://picsum.photos/100?random=2',
-            ),
+            ...wounds.map((wound) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildWoundListItem(wound),
+            )),
             const Gap(40),
             Center(
               child: SizedBox(
                 width: 240,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: _addNewWound,
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: const Text('New Wound', style: TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
@@ -110,7 +152,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
-          if (index == 3) {
+          if (index == 1) {
+            // Doctors tab — premium gate
+            if (_authService.isPremium) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DoctorsScreen()),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PremiumScreen()),
+              );
+            }
+          } else if (index == 2) {
             _onProfileTap();
           } else {
             setState(() => _selectedIndex = index);
@@ -123,7 +178,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'HOME'),
           BottomNavigationBarItem(icon: Icon(Icons.medical_services_outlined), activeIcon: Icon(Icons.medical_services), label: 'DOCTORS'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: 'CHAT'),
           BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'PROFILE'),
         ],
       ),
@@ -153,7 +207,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const Gap(4),
                 Text(
-                  'Left Knee Abrasion shows signs of potential inflammation. Contact your doctor if pain increases.',
+                  'Your recent wound shows signs of potential inflammation. Contact your doctor if pain increases.',
                   style: TextStyle(color: const Color(0xFFB3261E).withAlpha(204), fontSize: 13),
                 ),
               ],
@@ -165,7 +219,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildActiveCaseCard() {
+  Widget _buildActiveCaseCard(WoundModel wound) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -189,33 +243,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: const Color(0xFFEEF7FF), borderRadius: BorderRadius.circular(20)),
-                child: const Text('HEALING', style: TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold)),
+                child: Text(
+                  wound.status.name.toUpperCase(),
+                  style: const TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           const Gap(12),
-          const Text(
-            'Left Knee Abrasion',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D)),
+          Text(
+            wound.title,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D)),
           ),
-          const Text('Last scan: 2 hours ago', style: TextStyle(color: Color(0xFF5A6B74))),
+          Text('Last scan: ${wound.timeAgo}', style: const TextStyle(color: Color(0xFF5A6B74))),
           const Gap(24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              const Text('74', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Color(0xFF338880))),
+              Text('${wound.healingPercentage}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Color(0xFF338880))),
               const Text('/100', style: TextStyle(fontSize: 18, color: Color(0xFF9EA7AD))),
               const Spacer(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Moderate Healing', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D))),
+                  Text(
+                    wound.healingPercentage == 100 ? 'Healed' : 'Healing',
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D)),
+                  ),
                   const Gap(8),
                   SizedBox(
                     width: 140,
                     child: LinearProgressIndicator(
-                      value: 0.74,
+                      value: wound.healingPercentage / 100,
                       backgroundColor: const Color(0xFFE0E7E8),
                       valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF338880)),
                       minHeight: 6,
@@ -230,7 +290,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildWoundListItem(String title, String subtitle, String imageUrl) {
+  Widget _buildWoundListItem(WoundModel wound) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -241,16 +301,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+            child: Image.network(wound.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
           ),
           const Gap(16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D))),
+                Text(wound.title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D))),
                 const Gap(4),
-                Text(subtitle, style: const TextStyle(color: Color(0xFF5A6B74), fontSize: 13)),
+                Text(
+                  'Updated ${wound.timeAgo} • ${wound.healingPercentage}% Healed',
+                  style: const TextStyle(color: Color(0xFF5A6B74), fontSize: 13),
+                ),
               ],
             ),
           ),

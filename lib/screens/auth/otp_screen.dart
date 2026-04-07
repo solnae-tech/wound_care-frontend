@@ -31,92 +31,94 @@ class _OtpScreenState extends State<OtpScreen> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            const Gap(20),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF53D1C1).withAlpha(25),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.smartphone,
-                size: 64,
-                color: Color(0xFF53D1C1),
-              ),
-            ),
-            const Gap(40),
-            const Text(
-              'Verify Your Number',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A1F2D),
-              ),
-            ),
-            const Gap(16),
-            const Text(
-              'We sent a 6-digit code to +91 98765 43210',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF338880), fontSize: 16),
-            ),
-            const Gap(40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(
-                6,
-                (index) => _buildOtpBox(index),
-              ),
-            ),
-            const Gap(24),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.timer_outlined, size: 16, color: Color(0xFF9EA7AD)),
-                Gap(8),
-                Text('Resend code in 0:45', style: TextStyle(color: Color(0xFF9EA7AD))),
-              ],
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleVerify,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF338880),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const Gap(20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF53D1C1).withAlpha(25),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Verify',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ),
-            const Gap(16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Didn\'t receive it? ', style: TextStyle(color: Color(0xFF5A6B74))),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Resend',
-                    style: TextStyle(color: Color(0xFF338880), fontWeight: FontWeight.bold),
-                  ),
+                child: const Icon(
+                  Icons.smartphone,
+                  size: 64,
+                  color: Color(0xFF53D1C1),
                 ),
-              ],
-            ),
-          ],
+              ),
+              const Gap(40),
+              const Text(
+                'Verify Your Number',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0A1F2D),
+                ),
+              ),
+              const Gap(16),
+              const Text(
+                'We sent a 6-digit code to +91 98765 43210',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF338880), fontSize: 16),
+              ),
+              const Gap(40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(
+                  6,
+                  (index) => _buildOtpBox(index),
+                ),
+              ),
+              const Gap(24),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.timer_outlined, size: 16, color: Color(0xFF9EA7AD)),
+                  Gap(8),
+                  Text('Resend code in 0:45', style: TextStyle(color: Color(0xFF9EA7AD))),
+                ],
+              ),
+              const Gap(60),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleVerify,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF338880),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Verify',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ),
+              const Gap(16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Didn\'t receive it? ', style: TextStyle(color: Color(0xFF5A6B74))),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text(
+                      'Resend',
+                      style: TextStyle(color: Color(0xFF338880), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
