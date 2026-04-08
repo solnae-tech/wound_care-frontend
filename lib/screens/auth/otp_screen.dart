@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../services/auth_service.dart';
 import 'complete_profile_screen.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key});
+  final bool isLogin;
+  const OtpScreen({super.key, this.isLogin = false});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -59,10 +61,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
               ),
               const Gap(16),
-              const Text(
-                'We sent a 6-digit code to +91 98765 43210',
+              Text(
+                'We sent a 6-digit code to \n${AuthService().pendingEmail ?? "your email address"}',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF338880), fontSize: 16),
+                style: const TextStyle(color: Color(0xFF338880), fontSize: 16),
               ),
               const Gap(40),
               Row(
@@ -157,18 +159,41 @@ class _OtpScreenState extends State<OtpScreen> {
   void _handleVerify() async {
     setState(() => _isLoading = true);
     String otp = _controllers.map((c) => c.text).join();
-    bool success = await AuthService().verifyOtp(otp);
-    setState(() => _isLoading = false);
     
-    if (success && mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
-      );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid OTP. Use 111111 for testing.')),
-      );
+    try {
+      bool success = await AuthService().verifyOtp(otp);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          if (widget.isLogin) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const CompleteProfileScreen()),
+              (route) => false,
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid OTP code. Please try again.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: const Color(0xFFB3261E),
+          ),
+        );
+      }
     }
   }
 }

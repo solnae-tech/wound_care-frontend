@@ -1,4 +1,5 @@
 class UserModel {
+  int? id;
   String fullName;
   String phoneNumber;
   String email;
@@ -10,6 +11,7 @@ class UserModel {
   final DateTime createdAt;
 
   UserModel({
+    this.id,
     required this.fullName,
     required this.phoneNumber,
     required this.email,

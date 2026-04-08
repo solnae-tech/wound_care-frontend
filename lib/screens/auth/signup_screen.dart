@@ -12,6 +12,7 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
@@ -38,9 +39,11 @@ class _SignupScreenState extends State<SignupScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             const Text(
               'Create Account',
               style: TextStyle(
@@ -58,13 +61,30 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const Gap(32),
-            _buildTextField('Full Name', _nameController),
+            _buildTextField(
+              'Full Name', 
+              _nameController,
+              validator: (v) => v == null || v.trim().isEmpty ? 'Enter your full name' : null,
+            ),
             const Gap(16),
             _buildPhoneField(),
             const Gap(16),
-            _buildTextField('Email Address', _emailController),
+            _buildTextField(
+              'Email Address', 
+              _emailController,
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Enter your email';
+                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v)) return 'Enter a valid email';
+                return null;
+              },
+            ),
             const Gap(16),
-            _buildTextField('Password', _passwordController, isPassword: true),
+            _buildTextField(
+              'Password', 
+              _passwordController, 
+              isPassword: true,
+              validator: (v) => v == null || v.length < 6 ? 'Password must be at least 6 characters' : null,
+            ),
             const Gap(16),
             Row(
               children: [
@@ -128,7 +148,13 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
             const Gap(16),
-            _buildSocialButton('Continue with Google', 'assets/images/google_logo.png'), // Need logo or icon
+            _buildSocialButton('Continue with Google', 'assets/images/google_logo.png', onTap: () async {
+              try {
+                await AuthService().googleLogin();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+              }
+            }),
             const Gap(32),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -148,113 +174,140 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ],
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E7E8)),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF9EA7AD)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: InputBorder.none,
-          suffixIcon: isPassword ? const Icon(Icons.visibility_outlined, color: Color(0xFF9EA7AD)) : null,
-        ),
+  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false, String? Function(String?)? validator}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFF9EA7AD)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E7E8))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF338880), width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
+        suffixIcon: isPassword ? const Icon(Icons.visibility_outlined, color: Color(0xFF9EA7AD)) : null,
       ),
     );
   }
 
   Widget _buildPhoneField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E7E8)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: const BoxDecoration(
-              border: Border(right: BorderSide(color: Color(0xFFE0E7E8))),
-            ),
-            child: const Row(
-              children: [
-                Text('+91', style: TextStyle(fontWeight: FontWeight.bold)),
-                Icon(Icons.keyboard_arrow_down),
-              ],
-            ),
+    return TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      validator: (v) {
+        if (v == null || v.trim().isEmpty) return 'Enter your phone number';
+        if (v.trim().length < 10) return 'Invalid phone number';
+        return null;
+      },
+      decoration: InputDecoration(
+        hintText: 'Phone Number',
+        hintStyle: const TextStyle(color: Color(0xFF9EA7AD)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        filled: true,
+        fillColor: Colors.white,
+        prefixIcon: Container(
+          width: 60,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: const BoxDecoration(
+            border: Border(right: BorderSide(color: Color(0xFFE0E7E8))),
           ),
-          Expanded(
-            child: TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                hintText: 'Phone Number',
-                hintStyle: TextStyle(color: Color(0xFF9EA7AD)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                border: InputBorder.none,
-              ),
-            ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('+91', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D))),
+              Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF0A1F2D)),
+            ],
           ),
-        ],
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE0E7E8))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF338880), width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 2)),
       ),
     );
   }
 
-  Widget _buildSocialButton(String label, String iconPath) {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E7E8)),
-      ),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.g_mobiledata, size: 32, color: Colors.blue), // Placeholder for Google Icon
-            const Gap(8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A1F2D),
+  Widget _buildSocialButton(String label, String iconPath, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0E7E8)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.g_mobiledata, size: 32, color: Colors.blue), // Placeholder for Google Icon
+              const Gap(8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0A1F2D),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _handleSignup() async {
-    setState(() => _isLoading = true);
-    await AuthService().signup(
-      _nameController.text,
-      _phoneController.text,
-      _emailController.text,
-      _passwordController.text,
-    );
-    setState(() => _isLoading = false);
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const OtpScreen()),
+    if (!_formKey.currentState!.validate()) return;
+    
+    if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms of Service.'), backgroundColor: Color(0xFFB3261E)),
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final phoneString = '+91${_phoneController.text.trim()}';
+      await AuthService().signup(
+        _nameController.text.trim(),
+        phoneString,
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const OtpScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: const Color(0xFFB3261E),
+          ),
+        );
+      }
     }
   }
 }

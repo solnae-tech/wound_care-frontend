@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../services/auth_service.dart';
 import 'signup_screen.dart';
-import '../dashboard/dashboard_screen.dart';
+import 'otp_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -113,7 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const Gap(32),
-              _buildSocialButton('Continue with Google'),
+              _buildSocialButton('Continue with Google', onTap: () async {
+                try {
+                  await AuthService().googleLogin();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                }
+              }),
               const Gap(48),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -170,29 +176,33 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label) {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E7E8)),
-      ),
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.g_mobiledata, size: 32, color: Colors.blue),
-            const Gap(8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0A1F2D),
+  Widget _buildSocialButton(String label, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0E7E8)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.g_mobiledata, size: 32, color: Colors.blue),
+              const Gap(8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0A1F2D),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -200,22 +210,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() async {
     setState(() => _isLoading = true);
-    bool success = await AuthService().login(
-      _identifierController.text,
-      _passwordController.text,
-    );
-    setState(() => _isLoading = false);
-    
-    if (success && mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        (route) => false,
+    try {
+      bool success = await AuthService().login(
+        _identifierController.text.trim(),
+        _passwordController.text,
       );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid credentials. Please signup first.')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OtpScreen(isLogin: true)),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: const Color(0xFFB3261E),
+          ),
+        );
+      }
     }
   }
 }
