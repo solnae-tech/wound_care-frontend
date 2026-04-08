@@ -232,7 +232,7 @@ class _DoctorsScreenState extends State<DoctorsScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               itemCount: _filtered.length,
-              separatorBuilder: (_, __) => const Gap(12),
+              separatorBuilder: (context, index) => const Gap(12),
               itemBuilder: (_, i) => _DoctorCard(doctor: _filtered[i]),
             ),
           ),
@@ -295,7 +295,7 @@ class _Doctor {
 
 class _DoctorCard extends StatelessWidget {
   final _Doctor doctor;
-  const _DoctorCard({super.key, required this.doctor});
+  const _DoctorCard({required this.doctor});
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +326,7 @@ class _DoctorCard extends StatelessWidget {
                   width: 72,
                   height: 72,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (context, error, stackTrace) => Container(
                     width: 72,
                     height: 72,
                     color: const Color(0xFFE0F7F5),

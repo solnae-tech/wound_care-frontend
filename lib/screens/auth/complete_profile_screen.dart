@@ -15,8 +15,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  final _bpController = TextEditingController();
-  final _bsController = TextEditingController();
+  String _bpStatus = 'No';
+  String _sugarStatus = 'No';
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   String _selectedBloodType = 'Select Blood Type';
@@ -98,8 +98,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('BLOOD PRESSURE'),
-                            _buildInputField(_bpController, hint: 'e.g. 120/80'),
+                            _buildLabel('HIGH BP?'),
+                            _buildBooleanDropdown(_bpStatus, (v) => setState(() => _bpStatus = v!)),
                           ],
                         ),
                       ),
@@ -108,8 +108,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('BLOOD SUGAR'),
-                            _buildInputField(_bsController, hint: 'e.g. 100 mg/dL'),
+                            _buildLabel('DIABETIC?'),
+                            _buildBooleanDropdown(_sugarStatus, (v) => setState(() => _sugarStatus = v!)),
                           ],
                         ),
                       ),
@@ -274,11 +274,37 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     );
   }
 
+  Widget _buildBooleanDropdown(String value, ValueChanged<String?> onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE0E7E8)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          dropdownColor: Colors.white,
+          icon: const Icon(Icons.unfold_more, color: Color(0xFF5A6B74)),
+          items: <String>['Yes', 'No'].map((String val) {
+            return DropdownMenuItem<String>(
+              value: val,
+              child: Text(val, style: const TextStyle(color: Color(0xFF0A1F2D))),
+            );
+          }).toList(),
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
   void _handleSave() async {
     final stats = MedicalStats(
       bloodType: _selectedBloodType,
-      bloodPressure: _bpController.text,
-      bloodSugar: _bsController.text,
+      bloodPressure: _bpStatus,
+      bloodSugar: _sugarStatus,
       weight: _weightController.text,
       height: _heightController.text,
     );

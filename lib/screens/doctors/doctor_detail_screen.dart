@@ -246,7 +246,7 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: 7,
-                separatorBuilder: (_, __) => const Gap(8),
+                separatorBuilder: (context, index) => const Gap(8),
                 itemBuilder: (_, i) {
                   final date = _baseDate.add(Duration(days: i));
                   final sel = _selectedDay == i;

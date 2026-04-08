@@ -8,8 +8,8 @@ enum _StepStatus { pending, inProgress, done }
 
 class _AnalysisStep {
   final String label;
-  _StepStatus status;
-  _AnalysisStep(this.label, {this.status = _StepStatus.pending});
+  _StepStatus status = _StepStatus.pending;
+  _AnalysisStep(this.label);
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ class _PulsingIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: pulseAnim,
-      builder: (_, __) => SizedBox(
+      builder: (context, child) => SizedBox(
         width: 120,
         height: 120,
         child: Stack(

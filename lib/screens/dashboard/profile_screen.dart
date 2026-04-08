@@ -5,10 +5,25 @@ import '../../services/auth_service.dart';
 import '../../services/wound_service.dart';
 import '../auth/login_screen.dart';
 import '../../widgets/chat_fab.dart';
+import '../profile/personal_details_screen.dart';
+import '../profile/change_password_screen.dart';
+import '../profile/my_wounds_screen.dart';
+import '../profile/appointments_screen.dart';
+import '../profile/medical_history_screen.dart';
+import '../profile/billing_screen.dart';
+import '../profile/help_faq_screen.dart';
+import '../notifications_screen.dart';
+import '../premium_screen.dart';
+import '../about_us_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -30,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildProfileHeader(user),
+            _buildProfileHeader(user, AuthService().isPremium),
             const Gap(24),
             _buildStatsRow(
               wounds: woundService.wounds.length.toString(),
@@ -43,26 +58,50 @@ class ProfileScreen extends StatelessWidget {
               const Gap(16),
             ],
             _buildMenuSection('ACCOUNT', [
-              _MenuItem(Icons.person_outline, 'Personal Details'),
-              _MenuItem(Icons.lock_outline, 'Change Password'),
-              _MenuItem(Icons.notifications_none, 'Notifications'),
+              _MenuItem(Icons.person_outline, 'Personal Details', onTap: () async {
+                 final changed = await Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalDetailsScreen()));
+                 if (changed == true) setState(() {});
+              }),
+              _MenuItem(Icons.lock_outline, 'Change Password', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
+              }),
+              _MenuItem(Icons.notifications_none, 'Notifications', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+              }),
             ]),
             const Gap(16),
             _buildMenuSection('HEALTH', [
-              _MenuItem(Icons.healing_outlined, 'My Wounds'),
-              _MenuItem(Icons.calendar_today_outlined, 'Appointments'),
-              _MenuItem(Icons.history, 'Medical History'),
+              _MenuItem(Icons.healing_outlined, 'My Wounds', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWoundsScreen()));
+              }),
+              _MenuItem(Icons.calendar_today_outlined, 'Appointments', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AppointmentsScreen()));
+              }),
+              _MenuItem(Icons.history, 'Medical History', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const MedicalHistoryScreen()));
+              }),
             ]),
             const Gap(16),
             _buildMenuSection('PREMIUM', [
-              _MenuItem(Icons.workspace_premium_outlined, 'Premium Plan', trailing: _buildActiveTag()),
-              _MenuItem(Icons.account_balance_wallet_outlined, 'Billing & Payments'),
+              _MenuItem(Icons.workspace_premium_outlined, 'Premium Plan', trailing: _buildActiveTag(AuthService().isPremium), onTap: () async {
+                 await Navigator.push(context, MaterialPageRoute(builder: (_) => const PremiumScreen()));
+                 if (mounted) setState(() {});
+              }),
+              _MenuItem(Icons.account_balance_wallet_outlined, 'Billing & Payments', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const BillingScreen()));
+              }),
             ]),
             const Gap(16),
             _buildMenuSection('SUPPORT', [
-              _MenuItem(Icons.help_outline, 'Help & FAQ'),
-              _MenuItem(Icons.star_outline, 'Rate the App'),
-              _MenuItem(Icons.info_outline, 'About WoundCare'),
+              _MenuItem(Icons.help_outline, 'Help & FAQ', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpFaqScreen()));
+              }),
+              _MenuItem(Icons.star_outline, 'Rate the App', onTap: () {
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Redirecting to Store...')));
+              }),
+              _MenuItem(Icons.info_outline, 'About WoundCare', onTap: () {
+                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsScreen()));
+              }),
             ]),
             const Gap(24),
             Padding(
@@ -70,6 +109,7 @@ class ProfileScreen extends StatelessWidget {
               child: ListTile(
                 onTap: () async {
                   await AuthService().logout();
+                  if (!context.mounted) return;
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -89,7 +129,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(dynamic user) {
+  Widget _buildProfileHeader(dynamic user, bool isPremium) {
     String memberSince = 'March 2026';
     if (user != null) {
       memberSince = DateFormat('MMMM yyyy').format(user.createdAt);
@@ -148,20 +188,24 @@ class ProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEAEA),
+              color: isPremium ? const Color(0xFFFFEAEA) : const Color(0xFFF0F4F4),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.workspace_premium, color: Color(0xFFB3261E), size: 16),
-                Gap(8),
-                Text('Premium Member', style: TextStyle(color: Color(0xFFB3261E), fontWeight: FontWeight.bold)),
-                Gap(8),
-                CircleAvatar(radius: 3, backgroundColor: Color(0xFF338880)),
-                Gap(8),
-                Text('ACTIVE', style: TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold)),
-              ],
+              children: isPremium 
+                ? const [
+                    Icon(Icons.workspace_premium, color: Color(0xFFB3261E), size: 16),
+                    Gap(8),
+                    Text('Premium Member', style: TextStyle(color: Color(0xFFB3261E), fontWeight: FontWeight.bold)),
+                    Gap(8),
+                    CircleAvatar(radius: 3, backgroundColor: Color(0xFF338880)),
+                    Gap(8),
+                    Text('ACTIVE', style: TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold)),
+                  ]
+                : const [
+                    Text('Free Member', style: TextStyle(color: Color(0xFF5A6B74), fontWeight: FontWeight.bold)),
+                  ],
             ),
           ),
         ],
@@ -278,16 +322,24 @@ class ProfileScreen extends StatelessWidget {
       leading: Icon(item.icon, color: const Color(0xFF5A6B74)),
       title: Text(item.title, style: const TextStyle(color: Color(0xFF0A1F2D))),
       trailing: item.trailing ?? const Icon(Icons.chevron_right, color: Color(0xFF9EA7AD)),
-      onTap: () {},
+      onTap: item.onTap ?? () {},
     );
   }
 
-  Widget _buildActiveTag() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: const Color(0xFFEEF7FF), borderRadius: BorderRadius.circular(20)),
-      child: const Text('ACTIVE', style: TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold)),
-    );
+  Widget _buildActiveTag(bool isPremium) {
+    if (isPremium) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: const Color(0xFFEEF7FF), borderRadius: BorderRadius.circular(20)),
+        child: const Text('ACTIVE', style: TextStyle(color: Color(0xFF338880), fontSize: 10, fontWeight: FontWeight.bold)),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(20)),
+        child: const Text('UPGRADE', style: TextStyle(color: Color(0xFFE65100), fontSize: 10, fontWeight: FontWeight.bold)),
+      );
+    }
   }
 }
 
@@ -295,5 +347,6 @@ class _MenuItem {
   final IconData icon;
   final String title;
   final Widget? trailing;
-  _MenuItem(this.icon, this.title, {this.trailing});
+  final VoidCallback? onTap;
+  _MenuItem(this.icon, this.title, {this.trailing, this.onTap});
 }

@@ -238,7 +238,7 @@ class _AddWoundScreenState extends State<AddWoundScreen> {
                       title: 'Location on Body',
                       required: true,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedLocation,
+                        initialValue: _selectedLocation,
                         isExpanded: true,
                         decoration: _inputDecoration('Select body area'),
                         dropdownColor: Colors.white,

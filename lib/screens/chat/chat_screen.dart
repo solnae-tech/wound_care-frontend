@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../services/wound_service.dart';
-import '../../models/wound_model.dart';
 
 // ─── Model ────────────────────────────────────────────────────────────────────
 
@@ -533,7 +532,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Padding(
+      builder: (context, child) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 3),
         child: Transform.translate(
           offset: Offset(0, _anim.value),

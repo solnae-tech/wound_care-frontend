@@ -213,7 +213,7 @@ class _SectionLabel extends StatelessWidget {
 
 class _NotifCard extends StatelessWidget {
   final _Notification notif;
-  const _NotifCard({super.key, required this.notif});
+  const _NotifCard({required this.notif});
 
   _TypeStyle get _style => _typeStyle(notif.type);
 

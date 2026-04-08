@@ -1,5 +1,19 @@
 enum WoundStatus { healing, closed, infected }
 
+class WoundLog {
+  final int score;
+  final String note;
+  final DateTime date;
+  final String? imageUrl;
+  
+  WoundLog({
+    required this.score,
+    required this.note,
+    required this.date,
+    this.imageUrl,
+  });
+}
+
 class WoundModel {
   final String id;
   final String title;
@@ -8,6 +22,8 @@ class WoundModel {
   final int healingPercentage;
   final WoundStatus status;
   final String imageUrl;
+  final List<WoundLog> logs;
+  final String? alertMessage;
 
   WoundModel({
     required this.id,
@@ -17,6 +33,8 @@ class WoundModel {
     required this.healingPercentage,
     required this.status,
     required this.imageUrl,
+    required this.logs,
+    this.alertMessage,
   });
 
   String get timeAgo {

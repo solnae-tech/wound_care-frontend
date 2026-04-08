@@ -1,24 +1,36 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import '../../models/wound_model.dart';
 import '../chat/chat_screen.dart';
 import 'add_wound_screen.dart';
+import 'wound_comparison_screen.dart';
+import '../../services/wound_service.dart';
 
-class WoundProgressScreen extends StatelessWidget {
+class WoundProgressScreen extends StatefulWidget {
   final WoundModel wound;
   
   const WoundProgressScreen({super.key, required this.wound});
 
   @override
+  State<WoundProgressScreen> createState() => _WoundProgressScreenState();
+}
+
+class _WoundProgressScreenState extends State<WoundProgressScreen> {
+  @override
   Widget build(BuildContext context) {
-    // Generate some mock history data for the timeline
-    final timelineData = [
-      _TimelineEntry(day: 7, dateInfo: 'Today', score: wound.healingPercentage, image: wound.imageUrl, note: 'Moderate healing, minimal redness present at the distal edge.'),
-      _TimelineEntry(day: 5, score: 60, image: 'https://images.unsplash.com/photo-1579684453423-f84349ef60b0?auto=format&fit=crop&q=80&w=2691', note: 'Healing progressing steadily. Swelling reduced compared to Day 3.'),
-      _TimelineEntry(day: 3, score: 49, image: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&q=80&w=2669', note: 'Redness and swelling noticeable. Keep clean and dry.'),
-      _TimelineEntry(day: 1, score: 32, note: 'Initial wound registered. Fresh abrasion, painful.'),
-    ];
+    final currentWound = WoundService().wounds.firstWhere((w) => w.id == widget.wound.id, orElse: () => widget.wound);
+
+    final timelineData = currentWound.logs.asMap().entries.map((e) {
+      final log = e.value;
+      final diff = DateTime.now().difference(log.date).inDays;
+      return _TimelineEntry(
+         day: currentWound.logs.length - e.key, // inverse indexing since 0 is newest
+         dateInfo: diff == 0 ? 'Today' : (diff == 1 ? 'Yesterday' : '$diff days ago'),
+         score: log.score,
+         image: log.imageUrl,
+         note: log.note,
+      );
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FCFC),
@@ -29,7 +41,7 @@ class WoundProgressScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF338880)),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Progress: ${wound.title}',
+        title: Text('Progress: ${currentWound.title}',
             style: const TextStyle(
                 color: Color(0xFF338880),
                 fontWeight: FontWeight.bold,
@@ -38,7 +50,7 @@ class WoundProgressScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFF5A6B74)),
             onPressed: () {
-               Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(initialWoundId: wound.id)));
+               Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(initialWoundId: currentWound.id)));
             },
           ),
           IconButton(
@@ -91,7 +103,7 @@ class WoundProgressScreen extends StatelessWidget {
                           height: 140,
                           width: double.infinity,
                           child: CustomPaint(
-                            painter: _ChartPainter(targetScore: wound.healingPercentage),
+                            painter: _ChartPainter(targetScore: currentWound.healingPercentage),
                           ),
                         ),
                         const Gap(24),
@@ -125,7 +137,26 @@ class WoundProgressScreen extends StatelessWidget {
                 (context, index) {
                   final entry = timelineData[index];
                   final isLast = index == timelineData.length - 1;
-                  return _TimelineRow(entry: entry, isLast: isLast);
+                  return InkWell(
+                    onTap: () {
+                      final baseLog = currentWound.logs.last;
+                      final targetLog = currentWound.logs[index];
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => WoundComparisonScreen(
+                          wound: currentWound,
+                          baseLog: baseLog,
+                          baseDay: 1, // baseline is Day 1
+                          targetLog: targetLog,
+                          targetDay: entry.day,
+                        ),
+                      ));
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: _TimelineRow(entry: entry, isLast: isLast),
+                    ),
+                  );
                 },
                 childCount: timelineData.length,
               ),
@@ -152,8 +183,9 @@ class WoundProgressScreen extends StatelessWidget {
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => AddWoundScreen(existingWound: wound)));
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => AddWoundScreen(existingWound: currentWound)));
+            if (mounted) setState(() {});
           },
           icon: const Icon(Icons.camera_alt_outlined),
           label: const Text('Today\'s Log Wound', style: TextStyle(fontWeight: FontWeight.bold)),

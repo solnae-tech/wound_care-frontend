@@ -3,12 +3,13 @@ import 'package:gap/gap.dart';
 import '../../models/wound_model.dart';
 import '../../services/wound_service.dart';
 import '../../services/auth_service.dart';
+import '../profile/my_wounds_screen.dart';
+import '../notifications_screen.dart';
 import 'profile_screen.dart';
 import '../premium_screen.dart';
 import '../doctors/doctors_screen.dart';
 import '../../widgets/chat_fab.dart';
 import '../wounds/add_wound_screen.dart';
-import '../notifications_screen.dart';
 import '../about_us_screen.dart';
 import '../landing_screen.dart';
 import '../wounds/wound_progress_screen.dart';
@@ -53,13 +54,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         authService: _authService,
         onLogout: () async {
           await _authService.logout();
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const LandingScreen()),
-              (route) => false,
-            );
-          }
+          if (!context.mounted) return;
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LandingScreen()),
+            (route) => false,
+          );
         },
       ),
       backgroundColor: const Color(0xFFF8FCFC),
@@ -128,8 +128,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(color: Color(0xFF5A6B74), fontSize: 14),
             ),
             const Gap(24),
-            _buildAlertCard(),
-            const Gap(24),
+            if (activeWound?.alertMessage != null && activeWound!.alertMessage!.isNotEmpty) ...[
+              _buildAlertCard(activeWound.alertMessage!),
+              const Gap(24),
+            ],
             if (activeWound != null) _buildActiveCaseCard(activeWound),
             const Gap(32),
             Row(
@@ -140,7 +142,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0A1F2D)),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MyWoundsScreen()));
+                  },
                   child: const Text('View All', style: TextStyle(color: Color(0xFF338880))),
                 ),
               ],
@@ -207,7 +211,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildAlertCard() {
+  Widget _buildAlertCard(String alertPayload) {
+    final parts = alertPayload.split('|');
+    final String alertTitle = parts.isNotEmpty ? parts[0] : 'Alert';
+    final String alertDesc = parts.length > 1 ? parts[1] : '';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -224,15 +232,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Increased Redness Detected',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB3261E), fontSize: 15),
-                ),
-                const Gap(4),
                 Text(
-                  'Your recent wound shows signs of potential inflammation. Contact your doctor if pain increases.',
-                  style: TextStyle(color: const Color(0xFFB3261E).withAlpha(204), fontSize: 13),
+                  alertTitle,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB3261E), fontSize: 15),
                 ),
+                if (alertDesc.isNotEmpty) ...[
+                  const Gap(4),
+                  Text(
+                    alertDesc,
+                    style: TextStyle(color: const Color(0xFFB3261E).withAlpha(204), fontSize: 13),
+                  ),
+                ],
               ],
             ),
           ),

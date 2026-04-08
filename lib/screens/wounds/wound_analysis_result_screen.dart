@@ -337,11 +337,11 @@ class WoundAnalysisResultScreen extends StatelessWidget {
               // Save to global list
               if (existingWoundId != null) {
                 WoundService().updateWound(existingWoundId!, woundTitle, causeDesc);
+                Navigator.of(context)..pop()..pop();
               } else {
                 WoundService().addWound(woundTitle, causeDesc);
+                Navigator.of(context).popUntil((route) => route.isFirst);
               }
-              // Return to dashboard
-              Navigator.of(context).popUntil((route) => route.isFirst);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF338880),

@@ -213,7 +213,7 @@ const _features = [
 
 class _FeatureRow extends StatelessWidget {
   final _Feature feature;
-  const _FeatureRow({super.key, required this.feature});
+  const _FeatureRow({required this.feature});
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +254,6 @@ class _PlanCard extends StatelessWidget {
   final String price;
   final String sub;
   final String? badge;
-  final String? detail;
   final bool recommended;
   final bool isSelected;
 
@@ -263,7 +262,6 @@ class _PlanCard extends StatelessWidget {
     required this.price,
     required this.sub,
     this.badge,
-    this.detail,
     this.recommended = false,
     required this.isSelected,
   });
@@ -303,10 +301,6 @@ class _PlanCard extends StatelessWidget {
                       style: const TextStyle(fontSize: 12, color: Color(0xFF9EA7AD))),
                 ],
               ),
-              if (detail != null) ...[
-                const SizedBox(height: 2),
-                Text(detail!, style: const TextStyle(fontSize: 11, color: Color(0xFF9EA7AD))),
-              ],
               if (recommended) ...[
                 const SizedBox(height: 6),
                 Container(

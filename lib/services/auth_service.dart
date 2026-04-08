@@ -145,11 +145,62 @@ class AuthService {
   }
 
   Future<void> upgradeToPremium() async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1)); // mock network delay
     if (_currentUser != null) {
       _currentUser!.isPremium = true;
       await _saveUser();
     }
+  }
+
+  // ── Profile Updates ──────────────────────────────────────────────────────────
+
+  Future<bool> updatePersonalDetails({
+    required String fullName,
+    required String phoneNumber,
+    required String bloodType,
+    required String height,
+    required String weight,
+    required String bloodPressure,
+    required String bloodSugar,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 600)); // mock delay
+    if (_currentUser == null) return false;
+    
+    _currentUser!.fullName = fullName;
+    _currentUser!.phoneNumber = phoneNumber;
+    if (_currentUser!.medicalStats == null) {
+       _currentUser!.medicalStats = MedicalStats(
+           bloodType: bloodType,
+           bloodPressure: bloodPressure,
+           bloodSugar: bloodSugar,
+           weight: weight,
+           height: height,
+       );
+    } else {
+       _currentUser!.medicalStats!.bloodType = bloodType;
+       _currentUser!.medicalStats!.height = height;
+       _currentUser!.medicalStats!.weight = weight;
+       _currentUser!.medicalStats!.bloodPressure = bloodPressure;
+       _currentUser!.medicalStats!.bloodSugar = bloodSugar;
+    }
+    
+    await _saveUser();
+    return true;
+  }
+
+  Future<bool> updatePassword(String oldPassword, String newPassword) async {
+    await Future.delayed(const Duration(milliseconds: 600)); // mock delay
+    if (_currentUser == null) return false;
+    
+    // In mock, compare with what's stored or a standard default
+    final stored = _currentUser!.password ?? 'password123';
+    if (oldPassword != stored) {
+      return false; // Wrong old password
+    }
+    
+    _currentUser!.password = newPassword;
+    await _saveUser();
+    return true;
   }
 
   Future<void> logout() async {
