@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/wound_model.dart';
+import 'auth_service.dart';
 
 class WoundService {
   static final WoundService _instance = WoundService._internal();
@@ -38,8 +41,47 @@ class WoundService {
   }
 
   List<WoundModel> _wounds = [];
+  List<WoundModel> _woundCards = [];
+  List<AlertModel> _alerts = [];
 
   List<WoundModel> get wounds => _wounds;
+  List<WoundModel> get woundCards => _woundCards;
+  List<AlertModel> get alerts => _alerts;
+
+  Future<void> fetchDashboardData() async {
+    final userId = AuthService().currentUser?.id;
+    if (userId == null) return;
+
+    final url = Uri.parse('https://wound-care-wound-service-2.onrender.com/v1/dashboard?user_id=$userId');
+    
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        if (data['alerts'] != null) {
+          _alerts = (data['alerts'] as List)
+              .map((a) => AlertModel.fromJson(a))
+              .toList();
+        }
+
+        if (data['wound_list'] != null) {
+          _wounds = (data['wound_list'] as List)
+              .map((w) => WoundModel.fromDashboardJson(w))
+              .toList();
+        }
+
+        if (data['wound_cards'] != null) {
+          _woundCards = (data['wound_cards'] as List)
+              .map((w) => WoundModel.fromDashboardJson(w))
+              .toList();
+        }
+      }
+    } catch (e) {
+      // Keep existing dummy/cached data on error for UX stability
+      print('Dashboard Fetch Error: $e');
+    }
+  }
 
   void addWound(String title, String description) {
     _wounds.insert(0, WoundModel(

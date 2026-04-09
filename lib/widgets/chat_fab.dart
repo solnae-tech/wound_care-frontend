@@ -15,10 +15,10 @@ class ChatFab extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const ChatScreen()),
         );
       },
-      backgroundColor: const Color(0xFF338880),
-      elevation: 6,
+      backgroundColor: const Color(0xFF53D1C1), // Brighter teal for better contrast
+      elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: const Icon(Icons.health_and_safety_outlined, color: Colors.white, size: 26),
+      child: const Icon(Icons.health_and_safety_outlined, color: Colors.white, size: 28),
     );
   }
 }

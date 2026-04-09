@@ -115,7 +115,7 @@ class AuthService {
   // ── Auth methods ──────────────────────────────────────────────────────────────
   Future<void> signup(
       String name, String phone, String email, String password) async {
-    final url = Uri.parse('https://wound-care-auth-service.onrender.com/api/auth/register');
+    final url = Uri.parse('https://wound-care-auth-service-663047210945.europe-west1.run.app/api/auth/register');
     
     try {
       final response = await http.post(
@@ -158,7 +158,7 @@ class AuthService {
   Future<bool> verifyOtp(String otp) async {
     if (pendingEmail == null) return false;
 
-    final url = Uri.parse('https://wound-care-auth-service.onrender.com/api/auth/verify-otp');
+    final url = Uri.parse('https://wound-care-auth-service-663047210945.europe-west1.run.app/api/auth/verify-otp');
     try {
       final response = await http.post(
         url,
@@ -195,6 +195,8 @@ class AuthService {
           createdAt: DateTime.now(),
         );
         _isLoggedIn = true;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(_Keys.isLoggedIn, true);
         await _saveUser();
 
         pendingEmail = null;
@@ -215,7 +217,7 @@ class AuthService {
     
     // We execute the HTTP mapping first securely
     if (_currentUser!.id != null && authToken != null) {
-      final url = Uri.parse('https://wound-care-patient-service.onrender.com/profiles/\${_currentUser!.id}');
+      final url = Uri.parse('https://wound-care-patient-service-663047210945.europe-west1.run.app/profiles/\${_currentUser!.id}');
       
       try {
         final Map<String, dynamic> payload = {
@@ -258,7 +260,7 @@ class AuthService {
   }
 
   Future<bool> login(String identifier, String password) async {
-    final url = Uri.parse('https://wound-care-auth-service.onrender.com/api/auth/login');
+    final url = Uri.parse('https://wound-care-auth-service-663047210945.europe-west1.run.app/api/auth/login');
     try {
       final response = await http.post(
         url,
@@ -282,7 +284,7 @@ class AuthService {
 
   Future<void> logout() async {
     if (authToken != null) {
-      final url = Uri.parse('https://wound-care-auth-service.onrender.com/api/auth/logout');
+      final url = Uri.parse('https://wound-care-auth-service-663047210945.europe-west1.run.app/api/auth/logout');
       try {
         await http.post(
           url,
@@ -304,7 +306,7 @@ class AuthService {
   }
 
   Future<void> googleLogin() async {
-    final url = Uri.parse('https://wound-care-auth-service.onrender.com/api/auth/google');
+    final url = Uri.parse('https://wound-care-auth-service-663047210945.europe-west1.run.app/api/auth/google');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -315,7 +317,7 @@ class AuthService {
   Future<void> fetchProfile() async {
     if (_currentUser?.id == null || authToken == null) return;
     
-    final url = Uri.parse('https://wound-care-patient-service.onrender.com/profiles/${_currentUser!.id}');
+    final url = Uri.parse('https://wound-care-patient-service-663047210945.europe-west1.run.app/profiles/${_currentUser!.id}');
     try {
       final response = await http.get(
         url,
@@ -328,16 +330,23 @@ class AuthService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         
-        _currentUser!.fullName = data['full_name'] ?? _currentUser!.fullName;
-        _currentUser!.phoneNumber = data['phone_number'] ?? _currentUser!.phoneNumber;
+        // Robust parsing: check both snake_case (standard) and camelCase (common in JS/Java backends)
+        _currentUser!.fullName = data['full_name'] ?? data['fullName'] ?? _currentUser!.fullName;
+        _currentUser!.phoneNumber = data['phone_number'] ?? data['phoneNumber'] ?? _currentUser!.phoneNumber;
         _currentUser!.location = data['location'] ?? _currentUser!.location;
         
+        final bType = data['blood_type'] ?? data['bloodType'] ?? '';
+        final bPressure = data['blood_pressure'] ?? data['bloodPressure'];
+        final bSugar = data['blood_sugar'] ?? data['bloodSugar'];
+        final w = data['weight'];
+        final h = data['height'];
+
         _currentUser!.medicalStats = MedicalStats(
-          bloodType: data['blood_type'] ?? '',
-          bloodPressure: (data['blood_pressure'] == true) ? 'Yes' : 'No',
-          bloodSugar: (data['blood_sugar'] == true) ? 'Yes' : 'No',
-          weight: data['weight']?.toString() ?? '0',
-          height: data['height']?.toString() ?? '0',
+          bloodType: bType,
+          bloodPressure: (bPressure == true || bPressure == 'Yes') ? 'Yes' : 'No',
+          bloodSugar: (bSugar == true || bSugar == 'Yes') ? 'Yes' : 'No',
+          weight: w?.toString() ?? '0',
+          height: h?.toString() ?? '0',
         );
         
         await _saveUser();
@@ -360,6 +369,7 @@ class AuthService {
   Future<bool> updatePersonalDetails({
     required String fullName,
     required String phoneNumber,
+    required String location,
     required String bloodType,
     required String height,
     required String weight,
@@ -368,22 +378,29 @@ class AuthService {
   }) async {
     if (_currentUser == null) return false;
 
+    // Strip units (" cm", " kg") before sending to backend as numbers
+    final cleanHeightString = height.replaceAll(RegExp(r'[^0-9.]'), '');
+    final cleanWeightString = weight.replaceAll(RegExp(r'[^0-9.]'), '');
+    
+    // Clean phone number: keep only digits
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+
     // Send HTTP Update
     if (_currentUser!.id != null && authToken != null) {
-      final url = Uri.parse('https://wound-care-patient-service.onrender.com/profiles/${_currentUser!.id}');
+      final url = Uri.parse('https://wound-care-patient-service-663047210945.europe-west1.run.app/profiles/${_currentUser!.id}');
       
       try {
         final Map<String, dynamic> payload = {
           "id": _currentUser!.id,
           "user_id": _currentUser!.id,
           "full_name": fullName,
-          "phone_number": phoneNumber,
-          "location": _currentUser!.location ?? 'Unknown',
+          "phone_number": cleanPhone,
+          "location": location,
           "blood_type": bloodType,
           "blood_pressure": bloodPressure.toLowerCase() == 'yes',
           "blood_sugar": bloodSugar.toLowerCase() == 'yes',
-          "weight": double.tryParse(weight) ?? 0,
-          "height": double.tryParse(height) ?? 0,
+          "weight": double.tryParse(cleanWeightString) ?? 0,
+          "height": double.tryParse(cleanHeightString) ?? 0,
         };
 
         final response = await http.patch(

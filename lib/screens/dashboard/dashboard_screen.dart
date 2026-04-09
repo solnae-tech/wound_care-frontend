@@ -26,6 +26,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final WoundService _woundService = WoundService();
   final AuthService _authService = AuthService();
 
+  @override
+  void initState() {
+    super.initState();
+    _refreshProfile();
+  }
+
+  Future<void> _refreshProfile() async {
+    await _authService.fetchProfile();
+    await _woundService.fetchDashboardData();
+    if (mounted) setState(() {});
+  }
+
   void _onProfileTap() {
     Navigator.push(
       context,
@@ -44,7 +56,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeWound = _woundService.activeWound;
+    final alerts = _woundService.alerts;
+    final woundCards = _woundService.woundCards;
     final wounds = _woundService.wounds;
     final user = _authService.currentUser;
 
@@ -128,11 +141,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(color: Color(0xFF5A6B74), fontSize: 14),
             ),
             const Gap(24),
-            if (activeWound?.alertMessage != null && activeWound!.alertMessage!.isNotEmpty) ...[
-              _buildAlertCard(activeWound.alertMessage!),
-              const Gap(24),
-            ],
-            if (activeWound != null) _buildActiveCaseCard(activeWound),
+            // Live Alerts from Backend
+            ...alerts.map((alert) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildAlertCard(alert),
+            )),
+            
+            // Live Wound Cards (Active Cases)
+            ...woundCards.map((card) => Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: _buildActiveCaseCard(card),
+            )),
             const Gap(32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -211,42 +230,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildAlertCard(String alertPayload) {
-    final parts = alertPayload.split('|');
-    final String alertTitle = parts.isNotEmpty ? parts[0] : 'Alert';
-    final String alertDesc = parts.length > 1 ? parts[1] : '';
-
+  Widget _buildAlertCard(AlertModel alert) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEAEA),
+        color: alert.severity.toLowerCase() == 'high' ? const Color(0xFFFFEAEA) : const Color(0xFFFFF7E6),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFD1D1)),
+        border: Border.all(color: alert.severity.toLowerCase() == 'high' ? const Color(0xFFFFD1D1) : const Color(0xFFFFE5B4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.warning_rounded, color: Color(0xFFB3261E)),
+          Icon(
+            alert.severity.toLowerCase() == 'high' ? Icons.warning_rounded : Icons.info_outline,
+            color: alert.severity.toLowerCase() == 'high' ? const Color(0xFFB3261E) : const Color(0xFFE65100),
+          ),
           const Gap(12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  alertTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB3261E), fontSize: 15),
-                ),
-                if (alertDesc.isNotEmpty) ...[
-                  const Gap(4),
-                  Text(
-                    alertDesc,
-                    style: TextStyle(color: const Color(0xFFB3261E).withAlpha(204), fontSize: 13),
+                  alert.title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold, 
+                    color: alert.severity.toLowerCase() == 'high' ? const Color(0xFFB3261E) : const Color(0xFFE65100), 
+                    fontSize: 15
                   ),
-                ],
+                ),
+                const Gap(4),
+                Text(
+                  alert.message,
+                  style: TextStyle(
+                    color: (alert.severity.toLowerCase() == 'high' ? const Color(0xFFB3261E) : const Color(0xFFE65100)).withAlpha(204), 
+                    fontSize: 13
+                  ),
+                ),
               ],
             ),
           ),
-          const Icon(Icons.close, size: 18, color: Color(0xFFB3261E)),
         ],
       ),
     );

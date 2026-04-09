@@ -53,7 +53,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               const Gap(40),
               const Text(
-                'Verify Your Number',
+                'Verify Your E-Mail',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

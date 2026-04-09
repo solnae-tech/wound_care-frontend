@@ -15,6 +15,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _phoneCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   
   String? _bloodType;
   String? _bpStatus = 'No';
@@ -30,6 +31,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     if (u != null) {
       _fullNameCtrl.text = u.fullName;
       _phoneCtrl.text = u.phoneNumber;
+      _locationCtrl.text = u.location ?? '';
       final ms = u.medicalStats;
       if (ms != null) {
         _weightCtrl.text = ms.weight.replaceAll(RegExp(r'[^0-9.]'), '');
@@ -49,6 +51,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     _phoneCtrl.dispose();
     _weightCtrl.dispose();
     _heightCtrl.dispose();
+    _locationCtrl.dispose();
     super.dispose();
   }
 
@@ -60,6 +63,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final success = await AuthService().updatePersonalDetails(
       fullName: _fullNameCtrl.text.trim(),
       phoneNumber: _phoneCtrl.text.trim(),
+      location: _locationCtrl.text.trim(),
       bloodType: _bloodType ?? 'Unknown',
       height: '${_heightCtrl.text.trim()} cm',
       weight: '${_weightCtrl.text.trim()} kg',
@@ -138,6 +142,13 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   fillColor: const Color(0xFFF0F4F4),
                 ),
                 style: const TextStyle(color: Color(0xFF5A6B74)),
+              ),
+              const Gap(16),
+              TextFormField(
+                controller: _locationCtrl,
+                decoration: _inputDec('Location'),
+                style: const TextStyle(color: Color(0xFF0A1F2D)),
+                validator: (v) => v!.trim().isEmpty ? 'Enter your location' : null,
               ),
               const Gap(32),
               const Text('MEDICAL PROFILE', style: TextStyle(color: Color(0xFF9EA7AD), fontWeight: FontWeight.bold, fontSize: 11)),
